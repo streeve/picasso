@@ -671,8 +671,9 @@ class GridOperator
         // geometric operations, gather, scatter, and local dependencies for
         // field operations (all of which may be empty), and the local ijk
         // index of the entity they are currently working on.
+        auto grid = *( _mesh->localGrid() );
         Cajita::grid_parallel_for(
-            "operator_apply", exec_space, *( _mesh->localGrid() ),
+				  "operator_apply", exec_space, grid,
             Cajita::Own(), typename Location::entity_type(),
             KOKKOS_LAMBDA( const int i, const int j ) {
                 functorTagDispatch<WorkTag>( func, local_mesh, gather_deps,
