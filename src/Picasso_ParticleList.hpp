@@ -234,8 +234,9 @@ class ParticleList
 
     using tuple_type = typename aosoa_type::tuple_type;
 
-    template <std::size_t M>
-    using slice_type = typename aosoa_type::template member_slice_type<M>;
+    template <class FieldTag>
+    using slice_type = typename aosoa_type::template member_slice_type<
+        TypeIndexer<FieldTag, FieldTags...>::index>;
 
     using particle_type = Particle<FieldTags...>;
 
@@ -261,8 +262,7 @@ class ParticleList
 
     // Get a slice of a given field.
     template <class FieldTag>
-    slice_type<TypeIndexer<FieldTag, FieldTags...>::index>
-        slice( FieldTag ) const
+    slice_type<FieldTag> slice( FieldTag ) const
     {
         return Cabana::slice<TypeIndexer<FieldTag, FieldTags...>::index>(
             _aosoa, FieldTag::label() );
