@@ -102,6 +102,22 @@ RUN SILO_VERSION=4.10.2 && \
     make -j${NPROCS} install && \
     cd ../../ && rm -r silo
 
+# Install Clang/LLVM
+ENV LLVM_DIR=/opt/llvm
+RUN LLVM_VERSION=10.0.0 && \
+    LLVM_KEY="86419D8A 345AD05D" && \
+    LLVM_URL=https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-18.04.tar.xz && \
+    LLVM_ARCHIVE=llvm-${LLVM_VERSION}.tar.xz && \
+    SCRATCH_DIR=/scratch && mkdir -p ${SCRATCH_DIR} && cd ${SCRATCH_DIR} && \
+    wget --quiet ${LLVM_URL} --output-document=${LLVM_ARCHIVE} && \
+    wget --quiet ${LLVM_URL}.sig --output-document=${LLVM_ARCHIVE}.sig && \
+    gpg --verify ${LLVM_ARCHIVE}.sig ${LLVM_ARCHIVE} && \
+    mkdir -p ${LLVM_DIR} && \
+    tar -xvf ${LLVM_ARCHIVE} -C ${LLVM_DIR} --strip-components=1 && \
+    echo "${LLVM_DIR}/lib" > /etc/ld.so.conf.d/llvm.conf && ldconfig && \
+    rm -rf ${SCRATCH_DIR}
+ENV PATH=${LLVM_DIR}/bin:$PATH
+
 # Install Kokkos
 ARG KOKKOS_VERSION=3.4.01
 ENV KOKKOS_DIR=/opt/kokkos
@@ -116,7 +132,7 @@ RUN KOKKOS_URL=https://github.com/kokkos/kokkos/archive/${KOKKOS_VERSION}.tar.gz
     cmake \
       -D CMAKE_INSTALL_PREFIX=${KOKKOS_DIR} \
       -D CMAKE_BUILD_TYPE=Debug \
-      -D CMAKE_CXX_COMPILER=${SCRATCH_DIR}/kokkos/bin/nvcc_wrapper \
+      -D CMAKE_CXX_COMPILER=clang++ \
       -D Kokkos_ENABLE_SERIAL=ON \
       -D Kokkos_ENABLE_CUDA=ON \
       -D Kokkos_ENABLE_CUDA_LAMBDA=ON \
@@ -138,7 +154,7 @@ RUN ARBORX_VERSION=v1.0 && \
     cmake \
       -D CMAKE_INSTALL_PREFIX=${ARBORX_DIR} \
       -D CMAKE_BUILD_TYPE=Debug \
-      -D CMAKE_CXX_COMPILER=${KOKKOS_DIR}/bin/nvcc_wrapper \
+      -D CMAKE_CXX_COMPILER=clang++ \
       -D CMAKE_CXX_EXTENSIONS=OFF \
       -D CMAKE_PREFIX_PATH=${KOKKOS_DIR} \
     .. && \
@@ -158,7 +174,7 @@ RUN CABANA_VERSION=1b3bdc789e990e676438690e8516fb6c02cd6816 && \
     cmake \
       -D CMAKE_INSTALL_PREFIX=${CABANA_DIR} \
       -D CMAKE_BUILD_TYPE=Debug \
-      -D CMAKE_CXX_COMPILER=$KOKKOS_DIR/bin/nvcc_wrapper \
+      -D CMAKE_CXX_COMPILER=clang++ \
       -D CMAKE_PREFIX_PATH="$KOKKOS_DIR;$ARBORX_DIR;$SILO_DIR" \
       -D MPIEXEC_MAX_NUMPROCS=1 \
       .. && \
