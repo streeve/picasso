@@ -114,7 +114,7 @@ add_test(NAME InputParser_test COMMAND InputParser_test ${gtest_args})
 ##--------------------------------------------------------------------------##
 ## On-node tests with and without MPI.
 ##--------------------------------------------------------------------------##
-set(PICASSO_SUPPORTED_DEVICES SERIAL OPENMP CUDA HIP)
+set(PICASSO_SUPPORTED_DEVICES CUDA HIP)
 
 macro(Picasso_add_tests)
   cmake_parse_arguments(PICASSO_UNIT_TEST "MPI" "" "NAMES" ${ARGN})
