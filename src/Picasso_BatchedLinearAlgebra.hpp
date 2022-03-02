@@ -245,6 +245,10 @@ struct MatrixExpression
         return _f( i, j );
     }
 
+    KOKKOS_INLINE_FUNCTION
+    //operator value_type()() const { return _d[0][0]; }
+    value_type operator()() const { return _f( 0, 0 ); }
+
     // Get a row as a vector expression.
     KOKKOS_INLINE_FUNCTION
     auto row( const int n ) const
