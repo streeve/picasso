@@ -166,22 +166,4 @@ endmacro()
 
 Picasso_add_tests(NAMES
   BatchedLinearAlgebra
-  PolyPIC
-  APIC
-  )
-
-Picasso_add_tests(MPI NAMES
-  FacetGeometry
-  ParticleList
-  ParticleInit
-  UniformCartesianMeshMapping
-  BilinearMeshMapping
-  UniformMesh
-  AdaptiveMesh
-  FieldManager
-  GridOperator3d
-  GridOperator2d
-  ParticleInterpolation
-  LevelSetRedistance
-  ParticleLevelSet
   )
