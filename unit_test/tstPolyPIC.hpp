@@ -319,7 +319,8 @@ void collocatedTest()
     Kokkos::Experimental::contribute( gm_view, gm_sv );
 
     // Check grid momentum. Computed in Mathematica.
-    Kokkos::deep_copy( gv_host, gv_view );
+    gv_host =
+        Kokkos::create_mirror_view_and_copy( Kokkos::HostSpace(), gv_view );
     checkGridMomentum( std::integral_constant<int, Order>(), cx, cy, cz,
                        gv_host, near_eps, 0, 0 );
     checkGridMomentum( std::integral_constant<int, Order>(), cx, cy, cz,
@@ -456,7 +457,7 @@ void staggeredTest()
     // dimension-by-dimension so we set them here. We just checked the
     // dimension of particle velocity we are testing so we know it was right.
     setParticleVelocity( std::integral_constant<int, Order>(), pc_host );
-    Kokkos::deep_copy( pc, pc_host );
+    pc = Kokkos::create_mirror_view_and_copy( TEST_MEMSPACE{}, pc_host );
 
     // Reset the grid view.
     Kokkos::deep_copy( gs_view, 0.0 );
@@ -488,7 +489,8 @@ void staggeredTest()
     Kokkos::Experimental::contribute( gm_view, gm_sv );
 
     // Check grid momentum. Computed in Mathematica.
-    Kokkos::deep_copy( gs_host, gs_view );
+    gs_host =
+        Kokkos::create_mirror_view_and_copy( Kokkos::HostSpace(), gs_view );
     checkGridMomentum( std::integral_constant<int, Order>(), cx, cy, cz,
                        gs_host, near_eps, Dim, 0 );
 

@@ -666,7 +666,8 @@ void collocatedTest()
     Kokkos::Experimental::contribute( gm_view, gm_sv );
 
     // Check grid momentum. Computed in Mathematica.
-    Kokkos::deep_copy( gv_host, gv_view );
+    gv_host =
+        Kokkos::create_mirror_view_and_copy( Kokkos::HostSpace(), gv_view );
     checkGridMomentum( std::integral_constant<int, Order>(), cx, cy, cz,
                        gv_host, near_eps, 0, 0 );
     checkGridMomentum( std::integral_constant<int, Order>(), cx, cy, cz,
@@ -830,7 +831,8 @@ void staggeredTest()
     Kokkos::Experimental::contribute( gm_view, gm_sv );
 
     // Check grid momentum. Computed in Mathematica.
-    Kokkos::deep_copy( gs_host, gs_view );
+    gs_host =
+        Kokkos::create_mirror_view_and_copy( Kokkos::HostSpace(), gs_view );
     checkGridMomentum( std::integral_constant<int, Order>(), cx, cy, cz,
                        gs_host, near_eps, Dim, 0 );
 

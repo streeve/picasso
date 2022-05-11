@@ -174,10 +174,6 @@ void gatherScatterTest()
         Kokkos::HostSpace(), fm->view( FieldLocation::Cell(), FooOut() ) );
     auto bar_out_host = Kokkos::create_mirror_view_and_copy(
         Kokkos::HostSpace(), fm->view( FieldLocation::Cell(), BarOut() ) );
-    Kokkos::deep_copy( foo_out_host,
-                       fm->view( FieldLocation::Cell(), FooOut() ) );
-    Kokkos::deep_copy( bar_out_host,
-                       fm->view( FieldLocation::Cell(), BarOut() ) );
     Cajita::grid_parallel_for(
         "check_grid_out", Kokkos::DefaultHostExecutionSpace(),
         *( fm->mesh()->localGrid() ), Cajita::Own(), Cajita::Cell(),

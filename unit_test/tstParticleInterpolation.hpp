@@ -469,11 +469,6 @@ void interpolationTest()
     auto scalar_n = fm->view( FieldLocation::Node(), NodeScalar() );
     auto vector_n = fm->view( FieldLocation::Node(), NodeVector() );
 
-    auto scalar_n_host =
-        Kokkos::create_mirror_view( Kokkos::HostSpace(), scalar_n );
-    auto vector_n_host =
-        Kokkos::create_mirror_view( Kokkos::HostSpace(), vector_n );
-
     // P2G
     // ---
 
@@ -485,7 +480,8 @@ void interpolationTest()
     Kokkos::deep_copy( scalar_n, 0.0 );
     p2gsv_op->apply( "p2g_scalar_val", FieldLocation::Particle(),
                      TEST_EXECSPACE(), *fm, particles, ScalarValueP2G() );
-    Kokkos::deep_copy( scalar_n_host, scalar_n );
+    auto scalar_n_host =
+        Kokkos::create_mirror_view( Kokkos::HostSpace(), scalar_n );
     for ( int i = node_space.min( Dim::I ); i < node_space.max( Dim::I ); ++i )
         for ( int j = node_space.min( Dim::J ); j < node_space.max( Dim::J );
               ++j )
@@ -497,7 +493,8 @@ void interpolationTest()
     Kokkos::deep_copy( vector_n, 0.0 );
     p2gvv_op->apply( "p2g_vector_val", FieldLocation::Particle(),
                      TEST_EXECSPACE(), *fm, particles, VectorValueP2G() );
-    Kokkos::deep_copy( vector_n_host, vector_n );
+    auto vector_n_host =
+        Kokkos::create_mirror_view( Kokkos::HostSpace(), vector_n );
     for ( int i = node_space.min( Dim::I ); i < node_space.max( Dim::I ); ++i )
         for ( int j = node_space.min( Dim::J ); j < node_space.max( Dim::J );
               ++j )
@@ -510,7 +507,7 @@ void interpolationTest()
     Kokkos::deep_copy( vector_n, 0.0 );
     p2gsg_op->apply( "p2g_scalar_grad", FieldLocation::Particle(),
                      TEST_EXECSPACE(), *fm, particles, ScalarGradientP2G() );
-    Kokkos::deep_copy( vector_n_host, vector_n );
+    vector_n_host = Kokkos::create_mirror_view( Kokkos::HostSpace(), vector_n );
     for ( int i = node_space.min( Dim::I ); i < node_space.max( Dim::I ); ++i )
         for ( int j = node_space.min( Dim::J ); j < node_space.max( Dim::J );
               ++j )
@@ -523,7 +520,7 @@ void interpolationTest()
     Kokkos::deep_copy( scalar_n, 0.0 );
     p2gvd_op->apply( "p2g_vector_div", FieldLocation::Particle(),
                      TEST_EXECSPACE(), *fm, particles, VectorDivergenceP2G() );
-    Kokkos::deep_copy( scalar_n_host, scalar_n );
+    scalar_n_host = Kokkos::create_mirror_view( Kokkos::HostSpace(), scalar_n );
     for ( int i = node_space.min( Dim::I ); i < node_space.max( Dim::I ); ++i )
         for ( int j = node_space.min( Dim::J ); j < node_space.max( Dim::J );
               ++j )
@@ -535,7 +532,7 @@ void interpolationTest()
     Kokkos::deep_copy( vector_n, 0.0 );
     p2gtd_op->apply( "p2g_tensor_div", FieldLocation::Particle(),
                      TEST_EXECSPACE(), *fm, particles, TensorDivergenceP2G() );
-    Kokkos::deep_copy( vector_n_host, vector_n );
+    vector_n_host = Kokkos::create_mirror_view( Kokkos::HostSpace(), vector_n );
     for ( int i = node_space.min( Dim::I ); i < node_space.max( Dim::I ); ++i )
         for ( int j = node_space.min( Dim::J ); j < node_space.max( Dim::J );
               ++j )

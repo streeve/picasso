@@ -121,7 +121,8 @@ void particleTest()
         } );
 
     // Check the modification.
-    Cabana::deep_copy( aosoa_host, aosoa );
+    aosoa_host =
+        Cabana::create_mirror_view_and_copy( Kokkos::HostSpace(), aosoa );
     for ( std::size_t p = 0; p < num_p; ++p )
     {
         for ( int d = 0; d < 3; ++d )
@@ -225,7 +226,8 @@ void particleViewTest()
         } );
 
     // Check the modification.
-    Cabana::deep_copy( aosoa_host, aosoa );
+    aosoa_host =
+        Cabana::create_mirror_view_and_copy( Kokkos::HostSpace(), aosoa );
     for ( std::size_t p = 0; p < num_p; ++p )
     {
         for ( int d = 0; d < 3; ++d )
@@ -331,7 +333,8 @@ void linearAlgebraTest()
         } );
 
     // Check the modification.
-    Cabana::deep_copy( aosoa_host, aosoa );
+    aosoa_host =
+        Cabana::create_mirror_view_and_copy( Kokkos::HostSpace(), aosoa );
     for ( std::size_t p = 0; p < num_p; ++p )
     {
         for ( int d = 0; d < 3; ++d )
