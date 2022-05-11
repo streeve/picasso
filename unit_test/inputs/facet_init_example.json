@@ -4,7 +4,7 @@
         "global_bounding_volume_id": 3
     },
     "mesh": {
-        "global_num_cell": [40, 40, 40],
+        "global_num_cell": [20, 20, 20],
         "periodic": [false, true, false],
         "partitioner": {
             "type": "uniform_dim"

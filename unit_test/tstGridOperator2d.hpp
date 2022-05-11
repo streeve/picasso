@@ -120,7 +120,7 @@ void gatherScatterTest()
 {
     // Global bounding box.
     double cell_size = 0.23;
-    std::array<int, 2> global_num_cell = { 43, 22 };
+    std::array<int, 2> global_num_cell = { 23, 12 };
     std::array<double, 2> global_low_corner = { 1.2, 2.3 };
     std::array<double, 2> global_high_corner = {
         global_low_corner[0] + cell_size * global_num_cell[0],
