@@ -57,10 +57,10 @@ class UniformMesh
     {
         setGlobalNumCellAndCellSize( ptree );
         setPeriodicity( ptree );
-        setMinimumHaloWidth( ptree );
+        int grid_halo_width = getMinimumHaloWidth( ptree );
 
         auto partitioner = getPartitioner( ptree );
-        build( comm, partitioner, exec_space );
+        build( comm, partitioner, grid_halo_width, exec_space );
     }
 
     // Constructor that uses the default ExecutionSpace for this MemorySpace.
@@ -75,10 +75,10 @@ class UniformMesh
 
         setGlobalNumCellAndCellSize( ptree );
         setPeriodicity( ptree );
-        setMinimumHaloWidth( ptree );
+        int grid_halo_width = getMinimumHaloWidth( ptree );
 
         auto partitioner = getPartitioner( ptree );
-        build( comm, partitioner, exec_space{} );
+        build( comm, partitioner, grid_halo_width, exec_space{} );
     }
 
     // Constructor from global number of cells (without using boost).
@@ -95,7 +95,7 @@ class UniformMesh
         using exec_space = typename memory_space::execution_space;
 
         setCellSize();
-        build( comm, partitioner, exec_space{} );
+        build( comm, partitioner, _minimum_halo_width, exec_space{} );
     }
 
     // Constructor from global number of cells (without using boost).
@@ -111,16 +111,32 @@ class UniformMesh
         using exec_space = typename memory_space::execution_space;
 
         setGlobalNumCell();
-        build( comm, partitioner, exec_space{} );
+        build( comm, partitioner, _minimum_halo_width, exec_space{} );
     }
 
   private:
+    void setGlobalNumCell()
+    {
+        for ( int d = 0; d < 3; ++d )
+        {
+            _global_num_cell[d] = std::rint(
+                ( _global_bounding_box[d + 3] - _global_bounding_box[d] ) /
+                _cell_size );
+        }
+    }
+
+    void setCellSize()
+    {
+        // Uniform cell size.
+        _cell_size = ( _global_bounding_box[3] - _global_bounding_box[0] ) /
+                     _global_num_cell[0];
+    }
+
     void setGlobalNumCellAndCellSize( const boost::property_tree::ptree& ptree )
     {
         const auto& mesh_params = ptree.get_child( "mesh" );
 
         // Get the global number of cells in each direction and the cell size.
-        _cell_size = 0.0;
         if ( mesh_params.count( "cell_size" ) )
         {
             _cell_size = mesh_params.get<double>( "cell_size" );
@@ -146,23 +162,6 @@ class UniformMesh
         }
     }
 
-    void setGlobalNumCell()
-    {
-        for ( int d = 0; d < 3; ++d )
-        {
-            _global_num_cell[d] = std::rint(
-                ( _global_bounding_box[d + 3] - _global_bounding_box[d] ) /
-                _cell_size );
-        }
-    }
-
-    void setCellSize()
-    {
-        // Uniform cell size.
-        _cell_size = ( _global_bounding_box[3] - _global_bounding_box[0] ) /
-                     _global_num_cell[0];
-    }
-
     void setPeriodicity( const boost::property_tree::ptree& ptree )
     {
         const auto& mesh_params = ptree.get_child( "mesh" );
@@ -179,14 +178,14 @@ class UniformMesh
         }
     }
 
-    void setMinimumHaloWidth( const boost::property_tree::ptree& ptree )
+    int getMinimumHaloWidth( const boost::property_tree::ptree& ptree )
     {
         const auto& mesh_params = ptree.get_child( "mesh" );
 
         // Get the halo cell width. If the user does not assign one then it is
         // assumed the minimum halo cell width will be used.
-        _minimum_halo_width = std::max(
-            _minimum_halo_width, mesh_params.get<int>( "halo_cell_width", 0 ) );
+        return std::max( _minimum_halo_width,
+                         mesh_params.get<int>( "halo_cell_width", 0 ) );
     }
 
     auto getPartitioner( const boost::property_tree::ptree& ptree )
@@ -224,7 +223,7 @@ class UniformMesh
     template <class ExecutionSpace>
     void build( MPI_Comm comm,
                 const std::shared_ptr<Cajita::BlockPartitioner<3>> partitioner,
-                const ExecutionSpace& exec_space )
+                const int grid_halo_width, const ExecutionSpace& exec_space )
     {
         // Because the mesh is uniform check that the domain is evenly
         // divisible by the cell size in each dimension within round-off
@@ -253,16 +252,20 @@ class UniformMesh
         {
             if ( !_periodic[d] )
             {
+                std::cout << "here" << std::endl;
                 _global_num_cell[d] += 2 * _minimum_halo_width;
                 global_low_corner[d] -= _cell_size * _minimum_halo_width;
                 global_high_corner[d] += _cell_size * _minimum_halo_width;
             }
         }
 
+        // Copy into std arrays for Cajita.
         std::array<int, 3> gnc;
         std::array<bool, 3> p;
         for ( int d = 0; d < 3; ++d )
         {
+            std::cout << _global_num_cell[d] << " " << global_low_corner[d]
+                      << " " << global_high_corner[d] << std::endl;
             gnc[d] = _global_num_cell[d];
             p[d] = _periodic[d];
         }
@@ -274,8 +277,7 @@ class UniformMesh
         auto global_grid =
             Cajita::createGlobalGrid( comm, global_mesh, p, *partitioner );
         // Build the local grid.
-        _local_grid =
-            Cajita::createLocalGrid( global_grid, _minimum_halo_width );
+        _local_grid = Cajita::createLocalGrid( global_grid, grid_halo_width );
 
         // Create the nodes.
         buildNodes( _cell_size, exec_space );
@@ -379,6 +381,26 @@ auto createUniformMesh(
     return std::make_shared<UniformMesh<MemorySpace>>(
         cell_size, periodic, partitioner, global_bounding_box,
         minimum_halo_cell_width, comm );
+}
+
+template <class MemorySpace>
+auto createUniformMesh(
+    MemorySpace, const double cell_size, const Kokkos::Array<bool, 3>& periodic,
+    std::shared_ptr<Cajita::BlockPartitioner<3>> partitioner,
+    const Kokkos::Array<double, 3>& global_low_corner,
+    const Kokkos::Array<double, 3>& global_high_corner,
+    const int minimum_halo_cell_width, MPI_Comm comm )
+{
+    Kokkos::Array<double, 6> global_box;
+    for ( int d = 0; d < 3; ++d )
+    {
+        global_box[d] = global_low_corner[d];
+        global_box[d + 1] = global_high_corner[d];
+    }
+
+    return std::make_shared<UniformMesh<MemorySpace>>(
+        cell_size, periodic, partitioner, global_box, minimum_halo_cell_width,
+        comm );
 }
 
 template <class MemorySpace, class ExecSpace>
