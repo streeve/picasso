@@ -66,6 +66,11 @@ if(Picasso_ENABLE_TESTING)
   add_subdirectory(unit_test)
 endif()
 
+option(Picasso_ENABLE_PERFORMANCE_TESTING "Build performance tests" OFF)
+if(Picasso_ENABLE_PERFORMANCE_TESTING)
+  add_subdirectory(benchmark)
+endif()
+
 # examples
 add_subdirectory(examples)
 
