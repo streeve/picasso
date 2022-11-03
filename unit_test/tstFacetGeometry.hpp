@@ -10,9 +10,10 @@
  ****************************************************************************/
 
 #include <Picasso_FacetGeometry.hpp>
+#include <Picasso_FieldTypes.hpp>
 #include <Picasso_InputParser.hpp>
-#include <Picasso_ParticleList.hpp>
 #include <Picasso_Types.hpp>
+#include <Picasso_UniformMesh.hpp>
 
 #include <Picasso_ParticleInit.hpp>
 
@@ -487,7 +488,7 @@ struct LocateFunctor
         float xf[3] = { float( x[0] ), float( x[1] ), float( x[2] ) };
         for ( int d = 0; d < 3; ++d )
         {
-            get( p, Field::PhysicalPosition<3>(), d ) = x[d];
+            get( p, Cabana::Field::Position<3>(), d ) = x[d];
         }
         auto volume_id = FacetGeometryOps::locatePoint( xf, geom );
         get( p, Field::VolumeId() ) = volume_id;
@@ -510,9 +511,9 @@ void initExample()
     auto mesh = std::make_shared<UniformMesh<TEST_MEMSPACE>>(
         parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD );
 
-    using list_type = ParticleList<UniformMesh<TEST_MEMSPACE>,
-                                   Field::PhysicalPosition<3>, Field::VolumeId>;
-    list_type particles( "particles", mesh );
+    auto particles = Cajita::createMeshParticleList<TEST_MEMSPACE>(
+        "particles", mesh->localGrid(),
+        Cabana::ParticleTraits<Cabana::Field::Position<3>, Field::VolumeId>() );
 
     FacetGeometry<TEST_MEMSPACE> geometry( parser.propertyTree(),
                                            TEST_EXECSPACE() );
@@ -525,7 +526,7 @@ void initExample()
 #ifdef Cabana_ENABLE_SILO
     Cajita::Experimental::SiloParticleOutput::writeTimeStep(
         "particles", mesh->localGrid()->globalGrid(), 0, 0.0,
-        particles.slice( Field::PhysicalPosition<3>() ),
+        particles.slice( Cabana::Field::Position<3>() ),
         particles.slice( Field::VolumeId() ) );
 #endif
 }

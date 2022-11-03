@@ -118,7 +118,7 @@ void initializeParticles( InitRandom, const ExecutionSpace& exec_space,
     using particle_type = typename ParticleListType::particle_type;
 
     // Get the local grid.
-    const auto& local_grid = *( particle_list.mesh().localGrid() );
+    const auto& local_grid = particle_list.localGrid();
 
     // Create a local mesh.
     auto local_mesh = Cajita::createLocalMesh<ExecutionSpace>( local_grid );
@@ -266,7 +266,7 @@ void initializeParticles( InitUniform, const ExecutionSpace& exec_space,
     using particle_type = typename ParticleListType::particle_type;
 
     // Get the local grid.
-    const auto& local_grid = *( particle_list.mesh().localGrid() );
+    const auto& local_grid = particle_list.localGrid();
 
     // Create a local mesh.
     auto local_mesh = Cajita::createLocalMesh<ExecutionSpace>( local_grid );
@@ -428,7 +428,7 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace&,
     using particle_type = typename ParticleListType::particle_type;
 
     // Get the local grid.
-    const auto& local_grid = *( surface_particle_list.mesh().localGrid() );
+    const auto& local_grid = surface_particle_list.localGrid();
 
     // Create a local mesh.
     auto local_mesh = Cajita::createLocalMesh<ExecutionSpace>( local_grid );

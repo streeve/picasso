@@ -19,7 +19,6 @@ set(HEADERS
   Picasso_ParticleInit.hpp
   Picasso_ParticleInterpolation.hpp
   Picasso_ParticleLevelSet.hpp
-  Picasso_ParticleList.hpp
   Picasso_PolyPIC.hpp
   Picasso_Types.hpp
   Picasso_UniformMesh.hpp

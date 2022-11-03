@@ -15,7 +15,6 @@
 #include <Picasso_InputParser.hpp>
 #include <Picasso_ParticleInit.hpp>
 #include <Picasso_ParticleInterpolation.hpp>
-#include <Picasso_ParticleList.hpp>
 #include <Picasso_Types.hpp>
 
 #include <Cajita.hpp>
@@ -377,11 +376,12 @@ void interpolationTest()
         Cajita::Own(), Cajita::Node(), Cajita::Local() );
 
     // Make a particle list.
-    using list_type =
-        ParticleList<UniformMesh<TEST_MEMSPACE>, Field::LogicalPosition<3>,
-                     ParticleScalar, ParticleVector, ParticleTensor>;
-    list_type particles( "test_particles", mesh );
-    using particle_type = typename list_type::particle_type;
+    auto fields =
+        Cabana::ParticleTraits<Field::LogicalPosition<3>, ParticleScalar,
+                               ParticleVector, ParticleTensor>();
+    auto particles = Cajita::createMeshParticleList<TEST_MEMSPACE>(
+        "test_particles", mesh->localGrid(), fields );
+    using particle_type = typename decltype( particles )::particle_type;
 
     // Particle initialization functor. Make particles everywhere.
     auto particle_init_func =

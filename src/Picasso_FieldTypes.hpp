@@ -26,31 +26,6 @@
 
 namespace Picasso
 {
-//---------------------------------------------------------------------------//
-// General type indexer.
-//---------------------------------------------------------------------------//
-template <class T, int Size, int N, class Type, class... Types>
-struct TypeIndexerImpl
-{
-    static constexpr std::size_t value =
-        TypeIndexerImpl<T, Size, N - 1, Types...>::value *
-        ( std::is_same<T, Type>::value ? Size - 1 - N : 1 );
-};
-
-template <class T, int Size, class Type, class... Types>
-struct TypeIndexerImpl<T, Size, 0, Type, Types...>
-{
-    static constexpr std::size_t value =
-        std::is_same<T, Type>::value ? Size - 1 : 1;
-};
-
-template <class T, class... Types>
-struct TypeIndexer
-{
-    static constexpr std::size_t index =
-        TypeIndexerImpl<T, sizeof...( Types ), sizeof...( Types ) - 1,
-                        Types...>::value;
-};
 
 //---------------------------------------------------------------------------//
 // Field Layout
@@ -81,7 +56,7 @@ struct FieldViewTuple
     template <class Layout>
     KOKKOS_INLINE_FUNCTION const auto& get( Layout ) const
     {
-        return Cabana::get<TypeIndexer<
+        return Cabana::get<Cabana::TypeIndexer<
             FieldLayout<typename Layout::location, typename Layout::tag>,
             Layouts...>::index>( _views );
     }
@@ -89,7 +64,7 @@ struct FieldViewTuple
     template <class Layout>
     KOKKOS_INLINE_FUNCTION auto& get( Layout )
     {
-        return Cabana::get<TypeIndexer<
+        return Cabana::get<Cabana::TypeIndexer<
             FieldLayout<typename Layout::location, typename Layout::tag>,
             Layouts...>::index>( _views );
     }
@@ -98,17 +73,15 @@ struct FieldViewTuple
     template <class Location, class FieldTag>
     KOKKOS_INLINE_FUNCTION const auto& get( Location, FieldTag ) const
     {
-        return Cabana::get<
-            TypeIndexer<FieldLayout<Location, FieldTag>, Layouts...>::index>(
-            _views );
+        return Cabana::get<Cabana::TypeIndexer<FieldLayout<Location, FieldTag>,
+                                               Layouts...>::index>( _views );
     }
 
     template <class Location, class FieldTag>
     KOKKOS_INLINE_FUNCTION auto& get( Location, FieldTag )
     {
-        return Cabana::get<
-            TypeIndexer<FieldLayout<Location, FieldTag>, Layouts...>::index>(
-            _views );
+        return Cabana::get<Cabana::TypeIndexer<FieldLayout<Location, FieldTag>,
+                                               Layouts...>::index>( _views );
     }
 };
 
@@ -175,12 +148,6 @@ namespace Field
 // Field Tags.
 //---------------------------------------------------------------------------//
 // Forward declarations.
-template <class T>
-struct Scalar;
-template <class T, int D>
-struct Vector;
-template <class T, int D0, int D1>
-struct Matrix;
 template <class T, int D0, int D1, int D2>
 struct Tensor3;
 template <class T, int D0, int D1, int D2, int D3>
@@ -193,17 +160,19 @@ struct ScalarBase
 };
 
 template <class T>
-struct Scalar : ScalarBase
+struct Scalar : Cabana::Field::Scalar<T>, ScalarBase
 {
-    using value_type = T;
-    static constexpr int rank = 0;
-    static constexpr int size = 1;
-    using data_type = value_type;
+    using base_type = Cabana::Field::Scalar<T>;
+    using value_type = typename base_type::value_type;
+    using base_type::rank;
+    using base_type::size;
+    using data_type = typename base_type::data_type;
+
     using linear_algebra_type = value_type;
     template <class U>
     using field_type = Scalar<U>;
     template <int NumSpaceDim>
-    using gradient_type = Vector<T, NumSpaceDim>;
+    using gradient_type = Cabana::Field::Vector<T, NumSpaceDim>;
 };
 
 template <class T>
@@ -223,18 +192,20 @@ struct VectorBase
 };
 
 template <class T, int D>
-struct Vector : VectorBase
+struct Vector : Cabana::Field::Vector<T, D>, VectorBase
 {
-    using value_type = T;
-    static constexpr int rank = 1;
-    static constexpr int size = D;
-    static constexpr int dim0 = D;
-    using data_type = value_type[D];
+    using base_type = Cabana::Field::Vector<T, D>;
+    using value_type = typename base_type::value_type;
+    using base_type::dim0;
+    using base_type::rank;
+    using base_type::size;
+    using data_type = typename base_type::data_type;
+
     using linear_algebra_type = LinearAlgebra::VectorView<T, D>;
     template <class U>
-    using field_type = Vector<U, D>;
+    using field_type = Cabana::Field::Vector<U, D>;
     template <int NumSpaceDim>
-    using gradient_type = Matrix<T, D, NumSpaceDim>;
+    using gradient_type = Cabana::Field::Matrix<T, D, NumSpaceDim>;
 };
 
 template <class T>
@@ -254,17 +225,19 @@ struct MatrixBase
 };
 
 template <class T, int D0, int D1>
-struct Matrix : MatrixBase
+struct Matrix : Cabana::Field::Matrix<T, D0, D1>, MatrixBase
 {
-    using value_type = T;
-    static constexpr int rank = 2;
-    static constexpr int size = D0 * D1;
-    static constexpr int dim0 = D0;
-    static constexpr int dim1 = D1;
-    using data_type = value_type[D0][D1];
+    using base_type = Cabana::Field::Matrix<T, D0, D1>;
+    using value_type = typename base_type::value_type;
+    using base_type::dim0;
+    using base_type::dim1;
+    using base_type::rank;
+    using base_type::size;
+    using data_type = typename base_type::data_type;
+
     using linear_algebra_type = LinearAlgebra::MatrixView<T, D0, D1>;
     template <class U>
-    using field_type = Matrix<U, D0, D1>;
+    using field_type = Cabana::Field::Matrix<U, D0, D1>;
 };
 
 template <class T>
@@ -952,6 +925,61 @@ struct CommRank : Scalar<int>
 //---------------------------------------------------------------------------//
 
 } // end namespace Field
+
+//---------------------------------------------------------------------------//
+// LinearAlgebra-specific get.
+//---------------------------------------------------------------------------//
+// Get a view of a particle member as a vector. (Works for both Particle
+// and ParticleView)
+template <class ParticleType, class FieldTag>
+KOKKOS_FORCEINLINE_FUNCTION typename std::enable_if<
+    LinearAlgebra::is_vector<typename FieldTag::linear_algebra_type>::value,
+    typename FieldTag::linear_algebra_type>::type
+get( ParticleType& particle, FieldTag tag )
+{
+    return typename FieldTag::linear_algebra_type(
+        &( get( particle, tag, 0 ) ), ParticleType::vector_length );
+}
+
+template <class ParticleType, class FieldTag>
+KOKKOS_FORCEINLINE_FUNCTION typename std::enable_if<
+    LinearAlgebra::is_vector<typename FieldTag::linear_algebra_type>::value,
+    const typename FieldTag::linear_algebra_type>::type
+get( const ParticleType& particle, FieldTag tag )
+{
+    return typename FieldTag::linear_algebra_type(
+        const_cast<typename FieldTag::value_type*>(
+            &( get( particle, tag, 0 ) ) ),
+        ParticleType::vector_length );
+}
+
+// Get a view of a particle member as a matrix. (Works for both Particle
+// and ParticleView)
+template <class ParticleType, class FieldTag>
+KOKKOS_FORCEINLINE_FUNCTION typename std::enable_if<
+    LinearAlgebra::is_matrix<typename FieldTag::linear_algebra_type>::value,
+    typename FieldTag::linear_algebra_type>::type
+get( ParticleType& particle, FieldTag tag )
+{
+    return typename FieldTag::linear_algebra_type(
+        &( get( particle, tag, 0, 0 ) ),
+        ParticleType::vector_length * FieldTag::dim1,
+        ParticleType::vector_length );
+}
+
+template <class ParticleType, class FieldTag>
+KOKKOS_FORCEINLINE_FUNCTION typename std::enable_if<
+    LinearAlgebra::is_matrix<typename FieldTag::linear_algebra_type>::value,
+    const typename FieldTag::linear_algebra_type>::type
+get( const ParticleType& particle, FieldTag tag )
+{
+    return typename FieldTag::linear_algebra_type(
+        const_cast<typename FieldTag::value_type*>(
+            &( get( particle, tag, 0, 0 ) ) ),
+        ParticleType::vector_length * FieldTag::dim1,
+        ParticleType::vector_length );
+}
+
 } // end namespace Picasso
 
 #endif // PICASSO_FIELDTYPES_HPP

@@ -14,10 +14,10 @@
 
 #include <Picasso_AdaptiveMesh.hpp>
 #include <Picasso_FieldTypes.hpp>
-#include <Picasso_ParticleList.hpp>
 #include <Picasso_Types.hpp>
 #include <Picasso_UniformMesh.hpp>
 
+#include <Cabana_Core.hpp>
 #include <Cajita.hpp>
 
 #include <Kokkos_Core.hpp>

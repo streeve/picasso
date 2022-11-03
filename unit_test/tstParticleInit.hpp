@@ -12,8 +12,8 @@
 #include <Picasso_FieldTypes.hpp>
 #include <Picasso_InputParser.hpp>
 #include <Picasso_ParticleInit.hpp>
-#include <Picasso_ParticleList.hpp>
 #include <Picasso_Types.hpp>
+#include <Picasso_UniformMesh.hpp>
 
 #include <Cajita.hpp>
 
@@ -69,9 +69,10 @@ void InitTest( InitType init_type, int ppc )
         parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD );
 
     // Make a particle list.
-    using list_type = ParticleList<UniformMesh<TEST_MEMSPACE>, Foo, Bar>;
-    list_type particles( "test_particles", mesh );
-    using particle_type = typename list_type::particle_type;
+    auto fields = Cabana::ParticleTraits<Foo, Bar>();
+    auto particles = Cajita::createMeshParticleList<TEST_MEMSPACE>(
+        "test_particles", mesh->localGrid(), fields );
+    using particle_type = typename decltype( particles )::particle_type;
 
     // Particle initialization functor.
     const Kokkos::Array<double, 6> box = {
