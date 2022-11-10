@@ -436,6 +436,14 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace&,
     // Get the global grid.
     const auto& global_grid = local_grid.globalGrid();
 
+    Kokkos::Array<double, 3> local_low{};
+    Kokkos::Array<double, 3> local_high{};
+    for ( std::size_t d = 0; d < 3; ++d )
+    {
+        local_low[d] = local_mesh.lowCorner( d );
+        local_high[d] = local_mesh.highCorner( d );
+    }
+
     // Get the particles.
     auto& particles = surface_particle_list.aosoa();
 
@@ -452,12 +460,20 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace&,
     rnd_type pool;
     pool.init( seed, num_facets );
 
+    // Creation status. FIXME: should not be necessary (see below).
+    auto particle_created = Kokkos::View<bool*, ExecutionSpace>(
+        Kokkos::ViewAllocateWithoutInitializing( "particle_created" ),
+        num_particles );
+
+    // FIXME: should be a parallel_for and create all candidate surface
+    // particles (see below).
     // FIXME: Re-thread over particles instead of facets.
     // Initialize particles.
-    Kokkos::parallel_for(
+    int local_num_create = 0;
+    Kokkos::parallel_reduce(
         "Picasso::ParticleInit::RandomSurface",
         Kokkos::RangePolicy<ExecutionSpace>( 0, num_facets ),
-        KOKKOS_LAMBDA( const int f ) {
+        KOKKOS_LAMBDA( const int f, int& create_count ) {
             auto rand = pool.get_state( f );
 
             // Particle coordinate.
@@ -508,13 +524,30 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace&,
                 // Apply the random barycentric coordinates
                 px = a + r * ab + s * ac;
 
-                // Create a new particle with the given logical
-                // coordinates.
-                create_functor( px.data(), pan.data(), pa, particle );
+                // FIXME: should not be necessary - facets should not be created
+                // outside the domain.
+                if ( px( 0 ) >= local_low[0] && px( 0 ) <= local_high[0] &&
+                     px( 1 ) >= local_low[1] && px( 1 ) <= local_high[1] &&
+                     px( 2 ) >= local_low[2] && px( 2 ) <= local_high[2] )
+                {
+                    // Create a new particle with the given logical
+                    // coordinates.
+                    particle_created( pid ) =
+                        create_functor( px.data(), pan.data(), pa, particle );
 
-                particles.setTuple( pid, particle.tuple() );
+                    if ( particle_created( pid ) )
+                    {
+                        particles.setTuple( pid, particle.tuple() );
+                        create_count++;
+                    }
+                }
             }
-        } );
+        },
+        local_num_create );
+
+    // Filter empties. FIXME: should not be necessary.
+    filterEmpties( ExecutionSpace{}, local_num_create, particle_created,
+                   particles );
 
     Kokkos::Profiling::popRegion();
 }
