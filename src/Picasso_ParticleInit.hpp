@@ -440,8 +440,8 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace&,
     Kokkos::Array<double, 3> local_high{};
     for ( std::size_t d = 0; d < 3; ++d )
     {
-        local_low[d] = local_mesh.lowCorner( d );
-        local_high[d] = local_mesh.highCorner( d );
+        local_low[d] = local_mesh.lowCorner( Cajita::Own(), d );
+        local_high[d] = local_mesh.highCorner( Cajita::Own(), d );
     }
 
     // Get the particles.
