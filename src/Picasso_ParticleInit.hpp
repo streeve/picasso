@@ -541,6 +541,10 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace&,
                         create_count++;
                     }
                 }
+                else
+                {
+                    particle_created( pid ) = false;
+                }
             }
         },
         local_num_create );
