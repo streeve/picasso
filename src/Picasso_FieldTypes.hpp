@@ -926,6 +926,16 @@ struct CommRank : Scalar<int>
 
 } // end namespace Field
 
+template <class ParticleType, class FieldTag>
+KOKKOS_FORCEINLINE_FUNCTION auto
+get( ParticleType& particle, FieldTag tag,
+     typename std::enable_if<!LinearAlgebra::is_vector<
+                                 typename FieldTag::linear_algebra_type>::value,
+                             int>::value = 0 )
+{
+    return Cabana::get( particle, tag );
+}
+
 //---------------------------------------------------------------------------//
 // LinearAlgebra-specific get.
 //---------------------------------------------------------------------------//

@@ -27,7 +27,6 @@
 #include <Picasso_ParticleInit.hpp>
 #include <Picasso_ParticleInterpolation.hpp>
 #include <Picasso_ParticleLevelSet.hpp>
-#include <Picasso_ParticleList.hpp>
 #include <Picasso_PolyPIC.hpp>
 #include <Picasso_Types.hpp>
 #include <Picasso_UniformCartesianMeshMapping.hpp>

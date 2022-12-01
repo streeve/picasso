@@ -106,11 +106,12 @@ void filterEmpties( const ExecutionSpace& exec_space,
   with particles and resized to a size equal to the number of particles
   created.
 */
-template <class ParticleListType, class InitFunctor, class ExecutionSpace>
+template <class ParticleListType, class MeshType, class InitFunctor,
+          class ExecutionSpace>
 void initializeParticles( InitRandom, const ExecutionSpace& exec_space,
                           const int particles_per_cell,
                           const InitFunctor& create_functor,
-                          ParticleListType& particle_list )
+                          ParticleListType& particle_list, MeshType& mesh )
 {
     Kokkos::Profiling::pushRegion( "Picasso::initializeParticles::Random" );
 
@@ -118,7 +119,7 @@ void initializeParticles( InitRandom, const ExecutionSpace& exec_space,
     using particle_type = typename ParticleListType::particle_type;
 
     // Get the local grid.
-    const auto& local_grid = particle_list.localGrid();
+    const auto& local_grid = *( mesh->localGrid() );
 
     // Create a local mesh.
     auto local_mesh = Cajita::createLocalMesh<ExecutionSpace>( local_grid );
@@ -251,11 +252,12 @@ void initializeParticles( InitRandom, const ExecutionSpace& exec_space,
   with particles and resized to a size equal to the number of particles
   created.
 */
-template <class ParticleListType, class InitFunctor, class ExecutionSpace>
+template <class ParticleListType, class MeshType, class InitFunctor,
+          class ExecutionSpace>
 void initializeParticles( InitUniform, const ExecutionSpace& exec_space,
                           const int particles_per_cell_dim,
                           const InitFunctor& create_functor,
-                          ParticleListType& particle_list )
+                          ParticleListType& particle_list, MeshType& mesh )
 {
     Kokkos::Profiling::pushRegion( "Picasso::initializeParticles::Uniform" );
 
@@ -266,7 +268,7 @@ void initializeParticles( InitUniform, const ExecutionSpace& exec_space,
     using particle_type = typename ParticleListType::particle_type;
 
     // Get the local grid.
-    const auto& local_grid = particle_list.localGrid();
+    const auto& local_grid = *( mesh->localGrid() );
 
     // Create a local mesh.
     auto local_mesh = Cajita::createLocalMesh<ExecutionSpace>( local_grid );
@@ -414,13 +416,14 @@ void initializeParticles( InitUniform, const ExecutionSpace& exec_space,
   filled with particles and resized to a size equal to the number of particles
   created.
 */
-template <class ParticleListType, class InitFunc, class FacetGeometry,
-          class ExecutionSpace>
+template <class ParticleListType, class MeshType, class InitFunc,
+          class FacetGeometry, class ExecutionSpace>
 void initializeParticlesSurface( InitRandom, const ExecutionSpace&,
                                  const int particles_per_facet,
                                  const FacetGeometry& surface,
                                  const InitFunc& create_functor,
-                                 ParticleListType& surface_particle_list )
+                                 ParticleListType& surface_particle_list,
+                                 MeshType& mesh )
 {
     Kokkos::Profiling::pushRegion( "Picasso::initializeParticles::Surface" );
 
@@ -428,7 +431,7 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace&,
     using particle_type = typename ParticleListType::particle_type;
 
     // Get the local grid.
-    const auto& local_grid = surface_particle_list.localGrid();
+    const auto& local_grid = *( mesh->localGrid() );
 
     // Create a local mesh.
     auto local_mesh = Cajita::createLocalMesh<ExecutionSpace>( local_grid );
