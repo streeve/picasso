@@ -39,7 +39,8 @@ target_link_libraries(picasso
   Cabana::Core
   Cabana::Grid
   ArborX::ArborX
-  Boost::boost )
+  nlohmann_json::nlohmann_json
+  )
 
 target_include_directories(picasso
   PUBLIC
